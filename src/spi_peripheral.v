@@ -14,10 +14,12 @@ reg[2:0] sclk_sync;
 reg[1:0] COPI_sync;
 reg[1:0] nCS_sync;
 reg[5:0] rising_counter, falling_counter;
+reg[15:0] spi_buf;
 reg transaction_ready;
 reg transaction_processed;
 //Only checking nCS_sync[1] to nCS_sync[0] for posedge detection, I do not thing reg is required.
 wire nCS_posedge = (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1); 
+
 
 always @(posedge clk) begin
     if(!rst_n) begin
@@ -39,45 +41,38 @@ always @(posedge clk) begin
     end
 end
 
-always @(posedge clk) begin
-    if (!rst_n) begin
-        rising_counter <= 0;
-        falling_counter <= 0;
-    end else begin
-        //(2nd oldest = HIGH) AND (1st oldest = LOW)
-        if (sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
-            rising_counter <= rising_counter + 1;
-        //(2nd oldest = LOW) AND (1st oldest = HIGH)
-        end else if (sclk_sync[1] == 1'b0 && sclk_sync[0] == 1'b1) begin
-            falling_counter <= falling_counter + 1;
-        end
-    end
-end
-
-// //Error cases
-// if (rising_counter > 16 || falling_counter > 16) begin
-// or less than 16 after all bit counts
-//     // Handle error condition, e.g., reset counters or log error
-//     rising_counter <= 0;
-//     falling_counter <= 0;
-// end
-
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        // omitted code
+        
+        rising_counter <= 0;
+        falling_counter <= 0;
         transaction_ready <= 1'b0;
         // omitted code
     end else if (nCS_sync[1] == 1'b0) begin
-        // omitted code
+        //(2nd oldest = HIGH) AND (1st oldest = LOW)
+        //mode 0: reads COPI data on rising edge of SCLK
+        if (rising_counter < 16 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
+            spi_buf <= {spi_buf[14:0], COPI_sync[1]}; // Shift in the COPI data bit
+            rising_counter <= rising_counter + 1;
+        //(2nd oldest = LOW) AND (1st oldest = HIGH)
+        //mode 0: shift out COPI data on falling edge of SCLK
+        end else if (falling_counter < 16 && sclk_sync[1] == 1'b0 && sclk_sync[0] == 1'b1) begin
+            falling_counter <= falling_counter + 1;
+        end else if (rising_counter == 16 && falling_counter == 16) begin
+            // Transaction is complete after 16 bits
+            transaction_ready <= 1'b1; // Set ready flag
+        end
+
     end else begin
         // When nCS goes high (transaction ends), validate the complete transaction
         if (nCS_posedge) begin
+
             transaction_ready <= 1'b1;
         end else if (transaction_processed) begin
             // Clear ready flag once processed
             transaction_ready <= 1'b0;
         end
-        // omitted code
+        // ignore transactions with address outside of bounds
     end
 end
 
@@ -88,7 +83,8 @@ always @(posedge clk or negedge rst_n) begin
         transaction_processed <= 1'b0;
     end else if (transaction_ready && !transaction_processed) begin
         // Transaction is ready and not yet processed
-        // omitted code
+        // Update registers *only after the entire transaction completes* (on `nCS` rising edge).
+        // Use flags like `transaction_ready` to avoid partial updates.
         // Set the processed flag
         transaction_processed <= 1'b1;
     end else if (!transaction_ready && transaction_processed) begin
