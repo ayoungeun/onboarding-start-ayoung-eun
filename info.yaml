@@ -43,7 +43,7 @@ pinout:
   uo[5]: "OUT_5"
   uo[6]: "OUT_6"
   uo[7]: "OUT_7"
-  
+
   # Bidirectional pins
   uio[0]: "OUT_8"
   uio[1]: "OUT_9"
