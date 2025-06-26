@@ -6,23 +6,8 @@
 `default_nettype none
 
 module tt_um_uwasic_onboarding_ayoung_eun (
-    input  wire [7:0] ui_in,    // Dedicated inputs
-    output wire [7:0] uo_out,   // Dedicated outputs
-    input  wire [7:0] uio_in,   // IOs: Input path
-    output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
-    input  wire       ena,      // always 1 when the design is powered, so you can ignore it
-    input  wire       clk,      // clock
-    input  wire       rst_n     // reset_n - low to reset
-);
-
-  // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-  assign uio_out = 0;
-  assign uio_oe  = 0;
-
-  // List all unused inputs to prevent warnings
- assign uio_oe = 8'hFF; // Set all IOs to output
+ // Add this inside the module block
+  assign uio_oe = 8'hFF; // Set all IOs to output
   
   // Create wires to refer to the values of the registers
   wire [7:0] en_reg_out_7_0;
@@ -44,7 +29,6 @@ module tt_um_uwasic_onboarding_ayoung_eun (
   );
   // Add uio_in and ui_in[7:3] to the list of unused signals:
   wire _unused = &{ena, ui_in[7:3], uio_in, 1'b0};
-
       // Registers or data interface
 
     // Instantiate the SPI peripheral module
@@ -57,5 +41,7 @@ module tt_um_uwasic_onboarding_ayoung_eun (
         .outtopwm(en_reg_out_7_0),
         .outtopwm2(en_reg_out_15_8)
     );
+
+)
 
 endmodule
