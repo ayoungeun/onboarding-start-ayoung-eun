@@ -8,7 +8,7 @@ module spi_peripheral (
     output  wire [7:0] outtopwm,
     output  wire [7:0] outtopwm2
 );
-    localparam MAX_ADDR = 0x04;
+    localparam MAX_ADDR = 4;
     reg transaction_ready;
     reg transaction_processed;
     reg[2:0] sclk_sync;
