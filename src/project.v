@@ -17,8 +17,6 @@ module tt_um_uwasic_onboarding_ayoung_eun (
 );
 
   // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-  assign uio_out = 0;
   // List all unused inputs to prevent warnings
   assign uio_oe = 8'hFF; // Set all IOs to output
   
@@ -40,8 +38,7 @@ module tt_um_uwasic_onboarding_ayoung_eun (
     .pwm_duty_cycle(pwm_duty_cycle),
     .out({uio_out, uo_out})
   );
-  // Add uio_in and ui_in[7:3] to the list of unused signals:
-  wire _unused = &{ena, ui_in[7:3], uio_in, 1'b0};
+
 
       // Registers or data interface
 
@@ -55,6 +52,9 @@ module tt_um_uwasic_onboarding_ayoung_eun (
         .outtopwm(en_reg_out_7_0),
         .outtopwm2(en_reg_out_15_8)
     );
+
+      // Add uio_in and ui_in[7:3] to the list of unused signals:
+  wire _unused = &{ena, ui_in[7:3], uio_in, 1'b0};
 
 endmodule
 

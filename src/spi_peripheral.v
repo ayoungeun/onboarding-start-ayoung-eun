@@ -69,7 +69,6 @@ end
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            spi_buf <= 16'b0;
             transaction_processed <= 1'b0;
             outtopwm <= 8'b0;
             outtopwm2 <= 8'b0;
