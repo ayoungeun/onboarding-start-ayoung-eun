@@ -5,8 +5,8 @@ module spi_peripheral (
     input  wire sclk,      // SPI clock from master
     input  wire COPI,      // data from master
     input  wire nCS,      // slave select, active low
-    output  wire [7:0] outtopwm,
-    output  wire [7:0] outtopwm2
+    output  reg [7:0] outtopwm,
+    output  reg [7:0] outtopwm2
 );
     localparam MAX_ADDR = 4;
     reg transaction_ready;
