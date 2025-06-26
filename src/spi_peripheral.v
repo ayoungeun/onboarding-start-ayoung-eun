@@ -65,30 +65,25 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
-// Update registers only after the complete transaction has finished and been validated
-always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        spi_out <= 16'b0;
-        transaction_processed <= 1'b0;
-    end else if (transaction_ready && !transaction_processed) begin
-        // Transaction is ready and not yet processed
-        wire [7:0] addr = spi_out[7:1];
-        if ((spi_out[0] == 1'b1) && (addr <= MAX_ADDR)) begin
-            transaction_processed <= 1'b1;      
-        end else begin
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            spi_out <= 16'b0;
             transaction_processed <= 1'b0;
-        end 
-
-    end else if (!transaction_ready && transaction_processed) begin
-        if (nCS_posedge) begin
-            //update pwm registers
-            wire [7:0] pwm1 = spi_out[7:0];
-            wire [7:0] pwm2 = spi_out[15:8];
-            outtopwm = pwm1
-            outtopwm2 = pwm2
+            outtopwm <= 8'b0;
+            outtopwm2 <= 8'b0;
+        end else if (transaction_ready && !transaction_processed) begin
+            if ((spi_out[0] == 1'b1) && (spi_out[7:1] <= MAX_ADDR)) begin
+                transaction_processed <= 1'b1;      
+            end else begin
+                transaction_processed <= 1'b0;
+            end 
+        end else if (!transaction_ready && transaction_processed) begin
+            if (nCS_posedge) begin
+                outtopwm <= spi_out[7:0];
+                outtopwm2 <= spi_out[15:8];
+            end
+            transaction_processed <= 1'b0;
         end
-        // Reset processed flag when ready flag is cleared
-        transaction_processed <= 1'b0;
     end
-end
+
 endmodule
