@@ -22,40 +22,32 @@ module tt_um_uwasic_onboarding_ayoung_eun (
   assign uio_oe  = 0;
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+ assign uio_oe = 8'hFF; // Set all IOs to output
+  
+  // Create wires to refer to the values of the registers
+  wire [7:0] en_reg_out_7_0;
+  wire [7:0] en_reg_out_15_8;
+  wire [7:0] en_reg_pwm_7_0;
+  wire [7:0] en_reg_pwm_15_8;
+  wire [7:0] pwm_duty_cycle;
 
+  // Instantiate the PWM module
+  pwm_peripheral pwm_peripheral_inst (
+    .clk(clk),
+    .rst_n(rst_n),
+    .en_reg_out_7_0(en_reg_out_7_0),
+    .en_reg_out_15_8(en_reg_out_15_8),
+    .en_reg_pwm_7_0(en_reg_pwm_7_0),
+    .en_reg_pwm_15_8(en_reg_pwm_15_8),
+    .pwm_duty_cycle(pwm_duty_cycle),
+    .out({uio_out, uo_out})
+  );
+  // Add uio_in and ui_in[7:3] to the list of unused signals:
+  wire _unused = &{ena, ui_in[7:3], uio_in, 1'b0};
+  
   reg [7:0] spi_data;
 
       // Registers or data interface
-    reg[2:0] sclk_sync;
-    reg[1:0] COPI_sync;
-    reg[1:0] nCS_sync;
-    reg[5:0] rising_counter, falling_counter;
-    reg[15:0] spi_buf;
-    //Only checking nCS_sync[1] to nCS_sync[0] for posedge detection, I do not thing reg is required.
-    wire nCS_posedge = (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1); 
-    //need to pass it
-
-  always @(posedge clk) begin
-    if(!rst_n) begin
-        for (integer i; i<2; i = i + 1) begin
-            sclk_sync[i] <= 0;
-            nCS_sync[i] <= 0;
-            COPI_sync[i] <= 0;
-        end
-        sclk_sync[2] <=0;
-    end
-    else begin
-        sclk_sync[0] <= ui_in[0];
-        sclk_sync[1] <= sclk_sync[0];
-        sclk_sync[2] <= sclk_sync[1];
-        COPI_sync[0] <= ui_in[1]; 
-        COPI_sync[1] <= COPI_sync[0];
-        nCS_sync[0] <= ui_in[2];
-        nCS_sync[1] <= nCS_sync[0];
-    end
-end
-
 
     // Instantiate the SPI peripheral module
     spi_peripheral spi (
@@ -64,7 +56,8 @@ end
         .sclk(ui_in[0]),
         .COPI(ui_in[1]),
         .nSC(ui_in[2]),
-        .received_data(spi_data)
+        .outtopwm(en_reg_out_7_0),
+        .outtopwm2(en_reg_out_15_8)
     );
 
     assign spi_data_out = spi_data;

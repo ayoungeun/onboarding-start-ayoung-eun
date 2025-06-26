@@ -5,14 +5,36 @@ module spi_peripheral (
     input  wire sclk,      // SPI clock from master
     input  wire COPI,      // data from master
     input  wire nCS,      // slave select, active low
-    output reg  [15:0] spi_out
+    output  wire [7:0] outtopwm,
+    output  wire [7:0] outtopwm2
 );
+    localparam MAX_ADDR = 0x04;
     reg transaction_ready;
     reg transaction_processed;
+    reg[2:0] sclk_sync;
+    reg[1:0] COPI_sync;
+    reg[1:0] nCS_sync;
+    reg[5:0] rising_counter, falling_counter;
+    reg[15:0] spi_buf;
+    //Only checking nCS_sync[1] to nCS_sync[0] for posedge detection, I do not thing reg is required.
+    wire nCS_posedge = (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1); 
+    //need to pass it
+
+  always @(posedge clk) begin
+    if(!rst_n) begin
+        sclk_sync <= 'd0;
+        COPI_sync <= 'd0;
+        nCS_sync <= 'd0;
+    end
+    else begin
+        sclk_sync <= { sclk_sync[1:0], sclk };
+        COPI_sync <= { COPI_sync[0], COPI };
+        nCS_sync <= { nCS_sync[0], nCS };
+    end
+end
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        
         rising_counter <= 0;
         falling_counter <= 0;
         transaction_ready <= 1'b0;
@@ -21,7 +43,7 @@ always @(posedge clk or negedge rst_n) begin
         //(2nd oldest = HIGH) AND (1st oldest = LOW)
         //mode 0: reads COPI data on rising edge of SCLK
         if (rising_counter < 16 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
-            spi_buf <= {spi_buf[14:0], COPI_sync[1]}; // Shift in the COPI data bit
+            spi_out <= {spi_out[14:0], COPI_sync[1]}; // Shift in the COPI data bit
             rising_counter <= rising_counter + 1;
         //(2nd oldest = LOW) AND (1st oldest = HIGH)
         //mode 0: shift out COPI data on falling edge of SCLK
@@ -29,13 +51,11 @@ always @(posedge clk or negedge rst_n) begin
             falling_counter <= falling_counter + 1;
         end else if (rising_counter == 16 && falling_counter == 16) begin
             // Transaction is complete after 16 bits
-            transaction_ready <= 1'b1; // Set ready flag
         end
 
     end else begin
         // When nCS goes high (transaction ends), validate the complete transaction
         if (nCS_posedge) begin
-
             transaction_ready <= 1'b1;
         end else if (transaction_processed) begin
             // Clear ready flag once processed
@@ -48,28 +68,27 @@ end
 // Update registers only after the complete transaction has finished and been validated
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        // omitted code
+        spi_out <= 16'b0;
         transaction_processed <= 1'b0;
     end else if (transaction_ready && !transaction_processed) begin
         // Transaction is ready and not yet processed
-        // Update registers *only after the entire transaction completes* (on `nCS` rising edge).
-        // Use flags like `transaction_ready` to avoid partial updates.
-        // Set the processed flag
-        transaction_processed <= 1'b1;
+        wire [7:0] addr = spi_out[7:1];
+        if ((spi_out[0] == 1'b1) && (addr <= MAX_ADDR)) begin
+            transaction_processed <= 1'b1;      
+        end else begin
+            transaction_processed <= 1'b0;
+        end 
+
     end else if (!transaction_ready && transaction_processed) begin
+        if (nCS_posedge) begin
+            //update pwm registers
+            wire [7:0] pwm1 = spi_out[7:0];
+            wire [7:0] pwm2 = spi_out[15:8];
+            outtopwm = pwm1
+            outtopwm2 = pwm2
+        end
         // Reset processed flag when ready flag is cleared
         transaction_processed <= 1'b0;
     end
 end
 endmodule
-
-//Things to do in future
-/*
-1. * Ensure you capture **16 total bits** (1 R/W + 7 address + 8 data).
-2. **Address Validation**
-   * Ignore transactions with addresses outside `0x00`–`0x04`.
-   * Use a local parameter (e.g., `max_address`) for flexibility.
-3. **Transaction Finalization**
-   * Update registers *only after the entire transaction completes* (on `nCS` rising edge).
-   * Use flags like `transaction_ready` to avoid partial updates.
-   */
