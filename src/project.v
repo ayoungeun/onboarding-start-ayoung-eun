@@ -55,7 +55,7 @@ module tt_um_uwasic_onboarding_ayoung_eun (
         .rst_n(rst_n),
         .sclk(ui_in[0]),
         .COPI(ui_in[1]),
-        .nSC(ui_in[2]),
+        .nCS(ui_in[2]),
         .outtopwm(en_reg_out_7_0),
         .outtopwm2(en_reg_out_15_8)
     );

@@ -43,7 +43,7 @@ always @(posedge clk or negedge rst_n) begin
         //(2nd oldest = HIGH) AND (1st oldest = LOW)
         //mode 0: reads COPI data on rising edge of SCLK
         if (rising_counter < 16 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
-            spi_out <= {spi_out[14:0], COPI_sync[1]}; // Shift in the COPI data bit
+            spi_buf <= {spi_buf[14:0], COPI_sync[1]}; // Shift in the COPI data bit
             rising_counter <= rising_counter + 1;
         //(2nd oldest = LOW) AND (1st oldest = HIGH)
         //mode 0: shift out COPI data on falling edge of SCLK
@@ -67,20 +67,20 @@ end
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            spi_out <= 16'b0;
+            spi_buf <= 16'b0;
             transaction_processed <= 1'b0;
             outtopwm <= 8'b0;
             outtopwm2 <= 8'b0;
         end else if (transaction_ready && !transaction_processed) begin
-            if ((spi_out[0] == 1'b1) && (spi_out[7:1] <= MAX_ADDR)) begin
+            if ((spi_buf[0] == 1'b1) && (spi_buf[7:1] <= MAX_ADDR)) begin
                 transaction_processed <= 1'b1;      
             end else begin
                 transaction_processed <= 1'b0;
             end 
         end else if (!transaction_ready && transaction_processed) begin
             if (nCS_posedge) begin
-                outtopwm <= spi_out[7:0];
-                outtopwm2 <= spi_out[15:8];
+                outtopwm <= spi_buf[7:0];
+                outtopwm2 <= spi_buf[15:8];
             end
             transaction_processed <= 1'b0;
         end
