@@ -44,8 +44,6 @@ module tt_um_uwasic_onboarding_ayoung_eun (
   );
   // Add uio_in and ui_in[7:3] to the list of unused signals:
   wire _unused = &{ena, ui_in[7:3], uio_in, 1'b0};
-  
-  reg [7:0] spi_data;
 
       // Registers or data interface
 
@@ -59,7 +57,5 @@ module tt_um_uwasic_onboarding_ayoung_eun (
         .outtopwm(en_reg_out_7_0),
         .outtopwm2(en_reg_out_15_8)
     );
-
-    assign spi_data_out = spi_data;
 
 endmodule
