@@ -40,7 +40,7 @@ always @(posedge clk or negedge rst_n) begin
         falling_counter <= 0;
         transaction_ready <= 1'b0;  
         // omitted code
-    end else if (nCS_sync[1] == 1'b0 && rising_counter < 16 && falling_counter < 16) begin
+    end else if (nCS_sync[1] == 1'b0 && rising_counter <= 15 && falling_counter <= 15) begin
         isthisin <= 1'b1;
         //(2nd oldest = HIGH) AND (1st oldest = LOW)
         //mode 0: reads COPI data on rising edge of SCLK
