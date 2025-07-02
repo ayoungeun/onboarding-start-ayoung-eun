@@ -78,7 +78,7 @@ end
                 transaction_processed <= 1'b0;
             end 
         end else if (!transaction_ready && transaction_processed) begin
-            if (nCS_posedge && rising_counter == 16) begin
+            if ((nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1) && rising_counter == 16) begin
                 outtopwm  <= spi_buf[7:0];
                 outtopwm2 <= spi_buf[15:8];
             end
