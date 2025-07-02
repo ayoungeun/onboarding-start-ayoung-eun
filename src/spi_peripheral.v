@@ -38,37 +38,25 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         rising_counter <= 0;
         falling_counter <= 0;
-        transaction_ready <= 1'b0;  
-        // omitted code
+        transaction_ready <= 1'b0;
+        spi_buf <= 16'd0;
     end else if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b0) begin
-        isthisin <= 1'b1;
-        //(2nd oldest = HIGH) AND (1st oldest = LOW)
-        //mode 0: reads COPI data on rising edge of SCLK
-        if (sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
-            spi_buf <= {spi_buf[14:0], COPI_sync[1]}; // Shift in the COPI data bit
+        // nCS is LOW: transaction in progress
+        if (sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0 && rising_counter < 17) begin
+            spi_buf <= {spi_buf[14:0], COPI_sync[1]};
             rising_counter <= rising_counter + 1;
-        //(2nd oldest = LOW) AND (1st oldest = HIGH)
-        //mode 0: shift out COPI data on falling edge of SCLK
-        end else if (sclk_sync[1] == 1'b0 && sclk_sync[0] == 1'b1) begin
-            falling_counter <= falling_counter + 1;
-        end 
-        
-        //$display("Shifted in: spi_buf=%h, rising_counter=%d, COPI=%b", spi_buf, rising_counter, COPI_sync[1]);
-
-    end else begin
-        // When nCS goes high (transaction ends), validate the complete transaction
-        if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
-            isthisin <= 1'b0;
-                if (sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0 && rising_counter < 16) begin
-                spi_buf <= {spi_buf[14:0], COPI_sync[1]};
-                rising_counter <= rising_counter + 1;
-            end
-            transaction_ready <= 1'b1;
-        end else if (transaction_processed) begin
-            // Clear ready flag once processed
-            transaction_ready <= 1'b0;
         end
-        // ignore transactions with address outside of bounds
+        if (sclk_sync[1] == 1'b0 && sclk_sync[0] == 1'b1 && falling_counter < 16) begin
+            falling_counter <= falling_counter + 1;
+        end
+
+    end else if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
+        // nCS rising edge
+        if (rising_counter == 16) begin
+            transaction_ready <= 1'b1;
+        end
+    end else if (transaction_processed) begin
+        transaction_ready <= 1'b0;
     end
 end
 
