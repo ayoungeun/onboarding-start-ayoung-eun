@@ -53,13 +53,13 @@ always @(posedge clk or negedge rst_n) begin
             falling_counter <= falling_counter + 1;
         end 
         
-        //$display("Shifted in: spi_buf=%h, rising_counter=%d, COPI=%b", spi_buf, rising_counter, COPI_sync[1]);
+        $display("Shifted in: spi_buf=%h, rising_counter=%d, COPI=%b", spi_buf, rising_counter, COPI_sync[1]);
 
     end else begin
         // When nCS goes high (transaction ends), validate the complete transaction
         if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
             isthisin <= 1'b0;
-                if (rising_counter < 16) begin
+                if (rising_counter == 15) begin
                 spi_buf <= {spi_buf[14:0], COPI_sync[1]};
                 rising_counter <= rising_counter + 1;
             end
