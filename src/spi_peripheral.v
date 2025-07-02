@@ -40,7 +40,7 @@ always @(posedge clk or negedge rst_n) begin
         falling_counter <= 0;
         transaction_ready <= 1'b0;  
         // omitted code
-    end else if (nCS_sync[1] == 1'b0 && rising_counter < 16 && falling_counter < 16) begin
+    end else if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b0) begin
         isthisin <= 1'b1;
         //(2nd oldest = HIGH) AND (1st oldest = LOW)
         //mode 0: reads COPI data on rising edge of SCLK
@@ -53,12 +53,16 @@ always @(posedge clk or negedge rst_n) begin
             falling_counter <= falling_counter + 1;
         end 
         
-        $display("Shifted in: spi_buf=%h, rising_counter=%d, COPI=%b", spi_buf, rising_counter, COPI_sync[1]);
+        //$display("Shifted in: spi_buf=%h, rising_counter=%d, COPI=%b", spi_buf, rising_counter, COPI_sync[1]);
 
     end else begin
         // When nCS goes high (transaction ends), validate the complete transaction
         if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
             isthisin <= 1'b0;
+                if (sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0 && rising_counter < 16) begin
+                spi_buf <= {spi_buf[14:0], COPI_sync[1]};
+                rising_counter <= rising_counter + 1;
+            end
             transaction_ready <= 1'b1;
         end else if (transaction_processed) begin
             // Clear ready flag once processed
