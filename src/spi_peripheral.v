@@ -18,6 +18,7 @@ module spi_peripheral (
     reg[1:0] nCS_sync;
     reg[5:0] rising_counter, falling_counter;
     reg[15:0] spi_buf;
+    reg isthisin;
     //need to pass it
 
   always @(posedge clk) begin
@@ -39,7 +40,8 @@ always @(posedge clk or negedge rst_n) begin
         falling_counter <= 0;
         transaction_ready <= 1'b0;  
         // omitted code
-    end else if (nCS_sync[1] == 1'b0) begin
+    end else if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b0) begin
+        isthisin <= 1'b1;
         //(2nd oldest = HIGH) AND (1st oldest = LOW)
         //mode 0: reads COPI data on rising edge of SCLK
         if (rising_counter < 16 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
@@ -56,7 +58,8 @@ always @(posedge clk or negedge rst_n) begin
 
     end else begin
         // When nCS goes high (transaction ends), validate the complete transaction
-        if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1) begin
+        if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
+            isthisin <= 1'b0;
             transaction_ready <= 1'b1;
         end else if (transaction_processed) begin
             // Clear ready flag once processed
@@ -78,10 +81,8 @@ end
                 transaction_processed <= 1'b0;
             end 
         end else if (!transaction_ready && transaction_processed) begin
-            if ((nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1) && rising_counter == 16) begin
                 outtopwm  <= spi_buf[7:0];
                 outtopwm2 <= spi_buf[15:8];
-            end
             transaction_processed <= 1'b0;
         end
     end
