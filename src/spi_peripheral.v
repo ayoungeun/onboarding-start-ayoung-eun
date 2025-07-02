@@ -1,4 +1,4 @@
-default_nettype none
+`default_nettype none
 
 module spi_peripheral (
     input  wire clk,        // system clock
