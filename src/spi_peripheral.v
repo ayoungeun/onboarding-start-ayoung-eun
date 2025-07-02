@@ -18,8 +18,6 @@ module spi_peripheral (
     reg[1:0] nCS_sync;
     reg[5:0] rising_counter, falling_counter;
     reg[15:0] spi_buf;
-    //Only checking nCS_sync[1] to nCS_sync[0] for posedge detection, I do not thing reg is required.
-    wire nCS_posedge = (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1); 
     //need to pass it
 
   always @(posedge clk) begin
@@ -39,13 +37,14 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         rising_counter <= 0;
         falling_counter <= 0;
-        transaction_ready <= 1'b0;
+        transaction_ready <= 1'b0;  
         // omitted code
     end else if (nCS_sync[1] == 1'b0) begin
         //(2nd oldest = HIGH) AND (1st oldest = LOW)
         //mode 0: reads COPI data on rising edge of SCLK
         if (rising_counter < 16 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
             spi_buf <= {spi_buf[14:0], COPI_sync[1]}; // Shift in the COPI data bit
+         $display("Shifted in: spi_buf=%h, rising_counter=%d, COPI=%b", spi_buf, rising_counter, COPI_sync[1]);
             rising_counter <= rising_counter + 1;
         //(2nd oldest = LOW) AND (1st oldest = HIGH)
         //mode 0: shift out COPI data on falling edge of SCLK
@@ -57,7 +56,7 @@ always @(posedge clk or negedge rst_n) begin
 
     end else begin
         // When nCS goes high (transaction ends), validate the complete transaction
-        if (nCS_posedge) begin
+        if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1) begin
             transaction_ready <= 1'b1;
         end else if (transaction_processed) begin
             // Clear ready flag once processed
@@ -79,8 +78,8 @@ end
                 transaction_processed <= 1'b0;
             end 
         end else if (!transaction_ready && transaction_processed) begin
-            if (nCS_posedge) begin
-                outtopwm <= spi_buf[7:0];
+            if (nCS_posedge && rising_counter == 16) begin
+                outtopwm  <= spi_buf[7:0];
                 outtopwm2 <= spi_buf[15:8];
             end
             transaction_processed <= 1'b0;
