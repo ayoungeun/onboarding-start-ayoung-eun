@@ -208,10 +208,10 @@ async def test_pwm_freq(dut):
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 5)
 
-    await send_spi_transaction(dut, 1, 0x00, 0xFF)  # Write transaction
-    await send_spi_transaction(dut, 1, 0x01, 0xFF)  # Write transaction
-    await send_spi_transaction(dut, 1, 0x02, 0xFF)  # Write transaction
-    await send_spi_transaction(dut, 1, 0x03, 0xFF)  # Write transaction
+    await send_spi_transaction(dut, 1, 0x00, 0x05)  # Write transaction
+    await send_spi_transaction(dut, 1, 0x01, 0x0D)  # Write transaction
+    await send_spi_transaction(dut, 1, 0x02, 0x00)  # Write transaction
+    await send_spi_transaction(dut, 1, 0x03, 0x00)  # Write transaction
     await send_spi_transaction(dut, 1, 0x04, 0x80)  # Stable
     await ClockCycles(dut.clk, 50000)
 
@@ -224,7 +224,7 @@ async def test_pwm_freq(dut):
         period_ns = t3 - t1
         freq = 1e9 / period_ns
         dut._log.info(f"Bit {bit} frequency = {freq:.2f} Hz")
-        assert 2900 < freq < 3100, f"Got {freq:.2f} Hz on bit {bit}"
+        assert 2970 < freq < 3030, f"Got {freq:.2f} Hz on bit {bit}"
         dut._log.info("PWM Frequency test completed successfully")
 
 
