@@ -154,13 +154,16 @@ async def test_spi(dut):
 
 
 
-async def measure_freq(dut, signal,timeout=1000):
+async def measure_freq(dut, signal,timeout=1000, bit=0):
     # Wait for the rising edge
+    prev = signal.value.integer & (1 << bit)
     for each in range(timeout):
-        await RisingEdge(signal)
-        if signal.value.integer == 1:
+        await RisingEdge(clk)
+        curr = signal.value.integer & (1 << bit)
+        if prev == 0 and curr != 0:
             return cocotb.utils.get_sim_time(units="ns")
-    raise RuntimeError("Timeout")
+        prev = curr
+    raise RuntimeError("Timeout waiting for rising edge")
     
 
 async def measure_duty(dut, signal, timeout=1000):
