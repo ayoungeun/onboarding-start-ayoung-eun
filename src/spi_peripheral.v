@@ -59,7 +59,7 @@ always @(posedge clk or negedge rst_n) begin
             transaction_ready <= 1'b1; // delayed one cycle
             ncs_rise_detected <= 0;
             rising_counter <= 0;
-            $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
+            //$display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
 
         end else if (transaction_ready && !transaction_processed) begin
 
