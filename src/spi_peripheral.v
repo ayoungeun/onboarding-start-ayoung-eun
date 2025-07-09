@@ -85,7 +85,7 @@ always @(posedge clk or negedge rst_n) begin
             $display("transaction_processed");
             $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
             outtopwm <= spi_buf[7:0];
-            outtopwm2 <= spi_buf[15:8]
+            outtopwm2 <= spi_buf[15:8];
             spi_buf <= 16'b0;
             transaction_processed <= 0;
         end
