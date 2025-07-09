@@ -157,7 +157,7 @@ async def test_spi(dut):
 async def detect_rising_edge(dut, signal,timeout, bit=0):
     # Wait for the rising edge
     for each in range(timeout):
-        await ClockCycles(dut.clk, 3333)
+        await RisingEdge(dut.clk)
         curr = int(signal.value) & (1 << bit) #Manually check the bit
         if (curr == 1):
             return cocotb.utils.get_sim_time(units="ns")
@@ -167,7 +167,7 @@ async def detect_rising_edge(dut, signal,timeout, bit=0):
 async def detect_falling_edge(dut, signal,timeout, bit=0):
     # Wait for the rising edge
     for each in range(timeout):
-        await ClockCycles(dut.clk, 3333)
+        await RisingEdge(dut.clk)
         curr = int(signal.value) & (1 << bit) #Manually check the bit
         if (curr == 0):
             return cocotb.utils.get_sim_time(units="ns")
@@ -213,7 +213,6 @@ async def test_pwm_freq(dut):
     await send_spi_transaction(dut, 1, 0x02, 0xFF)  # Write transaction
     await send_spi_transaction(dut, 1, 0x03, 0xFF)  # Write transaction
     await send_spi_transaction(dut, 1, 0x04, 0x80)  # Stable
-    await ClockCycles(dut.clk, 50000)
 
     dut._log.info("Let frequency test begin")
     for bit in range (8):
