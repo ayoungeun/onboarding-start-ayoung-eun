@@ -71,7 +71,7 @@ always @(posedge clk or negedge rst_n) begin
 
         //nCS is up, we are ready to process.
         if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && rising_counter == 15) begin 
-            $display("nCS is up = %d, spi_buf = %b", rising_counter, spi_buf);
+            //$display("nCS is up = %d, spi_buf = %b", rising_counter, spi_buf);
                 //if ((spi_buf[0] == 1'b1) && (spi_buf[7:1] <= MAX_ADDR)) begin
             transaction_processed <= 1'b1;      
                 //end else begin
@@ -84,8 +84,8 @@ always @(posedge clk or negedge rst_n) begin
 
 
         if (transaction_processed) begin
-            $display("transaction_processed");
-            $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
+            //$display("transaction_processed");
+            //$display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
 
             if (spi_buf[15] == 1'b1) begin 
                 if(spi_buf[14:8] == 7'b0000000) begin 
