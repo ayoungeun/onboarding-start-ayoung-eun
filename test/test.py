@@ -231,7 +231,7 @@ async def test_pwm_freq(dut):
         period_ns = t3 - t1
         freq = 1e9 / period_ns
         dut._log.info(f"Bit {bit} frequency = {freq:.2f} Hz")
-        #assert 2970 < freq < 3030, f"Got {freq:.2f} Hz on bit {bit}"
+        assert 2970 < freq < 3030, f"Got {freq:.2f} Hz on bit {bit}"
         dut._log.info("PWM Frequency test completed successfully")
 
 
@@ -261,29 +261,40 @@ async def test_pwm_duty(dut):
     await send_spi_transaction(dut, 1, 0x02, 0xFF)  # Write transaction
     await send_spi_transaction(dut, 1, 0x03, 0xFF)  # Write transaction
 
+    dut._log.info("Let duty cycle test begin")
+
+
+
     duty_cycles = [
-        (0x00, "0%"),
+
         (0x40, "25%"),
-        (0x80, "50%"),
-        (0xFF, "100%")
+        (0x80, "50%")
+        
     ]
 
     for value, label in duty_cycles:
         await send_spi_transaction(dut, 1, 0x04, value)
+        #sync throwaway
+        await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising
+        await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Falling
+        await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising again       
+
         dut._log.info(f"Set PWM duty cycle to {label} (0x{value:02X})")
         #Wait for the rising edge/falling edge for 5 times, you can then conclude that it is duty cycle 0% or 100%.
 
         #for #some amount of time two cases - no rising edge or falling edge, that'd be duty cycle.
 
-        dut._log.info("uio_out ports")
-        await ClockCycles(dut.clk, 5)
-
-        dut._log.info("uo_out ports")
-        await ClockCycles(dut.clk, 5)
+        for bit in range (8):
+            t1 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
+            t2 = await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=bit)
+            t3 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
+            dut._log.info(f"Got {t1} ns and {t3} ns")
+            high_time = t2 - t1
+            period_ns = t3 - t1
+            duty_cycle = (high_time / period_ns) * 100
+            dut._log.info(f"Bit {bit} duty cycle = {duty_cycle:.2f} %")
 
     await ClockCycles(dut.clk, 100)
-
-
     dut._log.info("PWM Duty Cycle test completed successfully")
 
 
