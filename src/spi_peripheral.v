@@ -70,8 +70,8 @@ always @(posedge clk or negedge rst_n) begin
             end 
 
         end else if (transaction_processed) begin
-            outtopwm <= spi_buf[7:0];
-            outtopwm2 <= spi_buf[15:8];
+            outtopwm <= spi_buf[15:8];
+            outtopwm2 <= spi_buf[7:0];
             transaction_ready <= 0;
             transaction_processed <= 0;
         end
