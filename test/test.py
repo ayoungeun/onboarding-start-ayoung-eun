@@ -184,7 +184,7 @@ async def test_pwm_freq(dut):
     # Write your test here
     #Literally copied testbench above
     dut._log.info("test_pwm_freq")
-    signal = dut.uo_out[0] #pwm output bit
+    signal = dut.uo_out[0] 
 
     # Set the clock period to 100 ns (10 MHz)
     clock = Clock(dut.clk, 100, units="ns")
