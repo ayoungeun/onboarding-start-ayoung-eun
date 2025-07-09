@@ -154,13 +154,13 @@ async def test_spi(dut):
 
 
 
-async def measure_freq(dut):
+async def measure_freq(dut, signal):
     # Wait for the first rising edge
-    await RisingEdge(dut.clk)
+    await RisingEdge(signal)
     t1 = get_sim_time(units="ns")  # capture time in nanoseconds
 
     # Wait for the second rising edge
-    await RisingEdge(dut.clk)
+    await RisingEdge(signal)
     t2 = get_sim_time(units="ns")
 
     # Calculate the clock period
@@ -168,15 +168,15 @@ async def measure_freq(dut):
     frequency = 1 / period_ns
     
 
-async def measure_duty(dut):
+async def measure_duty(dut, signal):
     # Wait for the first rising edge
-    await RisingEdge(dut.clk)
+    await RisingEdge(signal)
     t1 = get_sim_time(units="ns")  # capture time in nanoseconds
-    await FallingEdge(dut.clk)
+    await FallingEdge(signal)
     fall_t = get_sim_time(units="ns")  # capture time in nanoseconds
 
     # Wait for the second rising edge
-    await RisingEdge(dut.clk)
+    await RisingEdge(signal)
     t2 = get_sim_time(units="ns")
 
     # Calculate the clock period
@@ -189,6 +189,7 @@ async def test_pwm_freq(dut):
     # Write your test here
     #Literally copied testbench above
     dut._log.info("test_pwm_freq")
+    signal = dut.uo_out
 
     # Set the clock period to 100 ns (10 MHz)
     clock = Clock(dut.clk, 100, units="ns")
@@ -211,15 +212,21 @@ async def test_pwm_freq(dut):
     await send_spi_transaction(dut, 1, 0x03, 0xFF)  # Write transaction
 
 
-    await send_spi_transaction(dut, 1, 0x04, 0x4F)  # I think whatever value is fine?
+    await send_spi_transaction(dut, 1, 0x04, 0x80)  # set stable
+    dut._log.info("Let frequency test begin")
 
-    dut._log.info("Frequency test begins")
+    await RisingEdge(signal)
+    t1 = get_sim_time(units="ns")
 
-    dut._log.info("uio_out ports")
-    await ClockCycles(dut.clk, 5)
+    await RisingEdge(signal)
+    t2 = get_sim_time(units="ns")
 
-    dut._log.info("uo_out ports")
-    await ClockCycles(dut.clk, 5)
+    period_ns = t2 - t1
+    frequency = 1e9 / period_ns
+
+    dut._log.info(f"Measured PWM frequency: {frequency} Hz")
+
+    assert 2900 < frequency < 3100, f"Got {frequency} Hz"
 
     dut._log.info("PWM Frequency test completed successfully")
 
