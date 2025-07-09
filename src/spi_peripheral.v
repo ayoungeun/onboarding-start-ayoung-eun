@@ -36,28 +36,6 @@ module spi_peripheral (
 end
 
 
-typedef enum logic [1:0] {
-    IDLE,
-    RECEIVING,
-    DONE
-} spi_state_t;
-
-spi_state_t state;
-
-always @(posedge clk or negedge rst_n) begin
-    if (!rst_n)
-        state <= IDLE;
-    else begin
-        case (state)
-            IDLE: if (nCS_low) state <= RECEIVING;
-            RECEIVING: if (nCS_rising) state <= DONE;
-            DONE: state <= IDLE;
-        endcase
-    end
-end
-
-
-
 //Screw this, I will just use FSM if this doesn't work out.
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -91,6 +69,7 @@ always @(posedge clk or negedge rst_n) begin
                 end 
             end
             transaction_ready <= 1'b0; // delayed
+            rising_counter <= 0; // reset the counter
         end
 
         if (transaction_ready) begin
@@ -102,7 +81,7 @@ always @(posedge clk or negedge rst_n) begin
         end
 
         end
-        
+
         if (transaction_processed) begin
             $display("transaction_processed");
             $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
