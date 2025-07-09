@@ -162,7 +162,7 @@ async def detect_rising_edge(dut, signal,timeout, bit=0):
             return cocotb.utils.get_sim_time(units="ns")
     raise RuntimeError("Timeout waiting for rising edge")
 
-async def detect_rising_edge(dut, signal,timeout, bit=0):
+async def detect_falling_edge(dut, signal,timeout, bit=0):
     # Wait for the rising edge
     for each in range(timeout):
         curr = int(dut.uo_out.value) & (1 << bit) #Manually check the bit
