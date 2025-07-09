@@ -218,9 +218,10 @@ async def test_pwm_freq(dut):
     await send_spi_transaction(dut, 1, 0x04, 0x80)  # Stable
 
     dut._log.info("Let frequency test begin")
-    await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)  # sync throwaway
-    
+
+
     for bit in range (8):
+        await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)  # sync throwaway
         t1 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
         t2 = await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=bit)
         t3 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
