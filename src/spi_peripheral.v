@@ -11,8 +11,7 @@ module spi_peripheral (
     output  reg [7:0] out_uio_out
     output  reg [7:0] out_PWM_uo_out,
     output  reg [7:0] out_PWM_uio_out,
-    output  reg [7:0] out_duty_cycle,  
-
+    output  reg [7:0] out_duty_cycle
 );
     localparam MAX_ADDR = 4;
     reg transaction_ready;
