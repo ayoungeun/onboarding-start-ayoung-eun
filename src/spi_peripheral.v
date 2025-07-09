@@ -18,7 +18,7 @@ module spi_peripheral (
     reg[1:0] nCS_sync;
     reg[5:0] rising_counter, falling_counter;
     reg[15:0] spi_buf;
-    reg isthisin;
+    reg ncs_rise_detected;
     //need to pass it
 
   always @(posedge clk) begin
@@ -42,18 +42,25 @@ always @(posedge clk or negedge rst_n) begin
         transaction_processed <= 1'b0;
         outtopwm <= 8'b0;
         outtopwm2 <= 8'b0;
+        ncs_rise_detected <= 0;
 
     end else begin
         // SPI shift logic
         if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b0 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
             spi_buf <= {spi_buf[14:0], COPI_sync[1]};
              rising_counter <= rising_counter + 1;
-             $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
+             //$display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
         end
 
-        if (rising_counter == 16 && nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
-            transaction_ready <= 1'b1;
-            
+        if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
+            ncs_rise_detected <= 1'b1; // set a flag
+
+        end else if (ncs_rise_detected) begin
+            transaction_ready <= 1'b1; // delayed one cycle
+            ncs_rise_detected <= 0;
+            rising_counter <= 0;
+            $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
+
         end else if (transaction_ready && !transaction_processed) begin
 
             if ((spi_buf[0] == 1'b1) && (spi_buf[7:1] <= MAX_ADDR)) begin
