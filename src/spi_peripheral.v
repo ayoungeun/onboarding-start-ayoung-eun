@@ -49,13 +49,13 @@ always @(posedge clk or negedge rst_n) begin
 
     end else begin
         // SPI shift logic
-        if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b0 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
+        if (rising_counter < 16 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
             spi_buf <= {spi_buf[14:0], COPI_sync[1]};
              rising_counter <= rising_counter + 1;
              //$display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
         end
 
-        if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
+        if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed && rising_counter == 16) begin
             ncs_rise_detected <= 1'b1; // set a flag
 
         end else if (ncs_rise_detected) begin
@@ -73,7 +73,6 @@ always @(posedge clk or negedge rst_n) begin
         end 
         
         if (transaction_ready && !transaction_processed) begin
-             $display("transaction_ready = %b, spi_buf = %b", transaction_ready, spi_buf);
             if ((spi_buf[0] == 1'b1) && (spi_buf[7:1] <= MAX_ADDR)) begin
                 transaction_processed <= 1'b1;      
             end else begin
@@ -84,8 +83,8 @@ always @(posedge clk or negedge rst_n) begin
         
         if (transaction_processed) begin
             $display("transaction_processed");
-            outtopwm <= spi_buf[7:0];
-            outtopwm2 <= spi_buf[15:8];
+            outtopwm <= spi_buf[15:8];
+            outtopwm2 <= spi_buf[7:0];
             transaction_ready <= 0;
             transaction_processed <= 0;
         end
