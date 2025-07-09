@@ -264,7 +264,7 @@ async def test_pwm_duty(dut):
         dut._log.info(f"Set PWM duty cycle to {label} (0x{value:02X})")
         #Wait for the rising edge/falling edge for 5 times, you can then conclude that it is duty cycle 0% or 100%.
 
-        for #some amount of time 
+        #for #some amount of time two cases - no rising edge or falling edge, that'd be duty cycle.
 
         dut._log.info("uio_out ports")
         await ClockCycles(dut.clk, 5)
