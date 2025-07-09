@@ -7,8 +7,12 @@ module spi_peripheral (
     input  wire sclk,      // SPI clock from master
     input  wire COPI,      // data from master
     input  wire nCS,      // slave select, active low
-    output  reg [7:0] outtopwm,
-    output  reg [7:0] outtopwm2
+    output  reg [7:0] out_uo_out,
+    output  reg [7:0] out_uio_out
+    output  reg [7:0] out_PWM_uo_out,
+    output  reg [7:0] out_PWM_uio_out,
+    output  reg [7:0] out_duty_cycle,  
+
 );
     localparam MAX_ADDR = 4;
     reg transaction_ready;
@@ -84,8 +88,25 @@ always @(posedge clk or negedge rst_n) begin
         if (transaction_processed) begin
             $display("transaction_processed");
             $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
-            outtopwm <= spi_buf[7:0];
-            outtopwm2 <= spi_buf[15:8];
+
+            if (spi_buf[15] == 1'b1) begin 
+                if(spi_buf[14:8] == 7'b0000000) begin 
+                    out_uo_out <= spi_buf[7:0];
+
+                end else if (spi_buf[14:8] == 7'b0000001) begin 
+                    out_uio_out <= spi_buf[7:0];
+
+                end else if (spi_buf[14:8] == 7'b0000010) begin 
+                    out_PWM_uo_out <= spi_buf[7:0];
+
+                end else if (spi_buf[14:8] == 7'b0000011) begin 
+                    out_PWM_uio_out <= spi_buf[7:0];
+
+                end else if (spi_buf[14:8] == 7'b0000100) begin 
+                    out_duty_cycle <= spi_buf[7:0];
+                end
+
+            end
             spi_buf <= 16'b0;
             transaction_processed <= 0;
         end
