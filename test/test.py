@@ -180,53 +180,46 @@ async def measure_duty(dut, signal, timeout=1000):
     high_time = fall_t - t1
     period_ns = t2 - t1
     duty_cycle = high_time / period_ns
-
+    
 @cocotb.test()
 async def test_pwm_freq(dut):
-    # Write your test here
-    #Literally copied testbench above
     dut._log.info("test_pwm_freq")
-    signal = dut.uo_out[0] 
 
-    # Set the clock period to 100 ns (10 MHz)
-    clock = Clock(dut.clk, 100, units="ns")
+    # Clock setup
+    clock = Clock(dut.clk, 100, units="ns")  # 10 MHz
     cocotb.start_soon(clock.start())
 
     # Reset
     dut._log.info("Reset")
     dut.ena.value = 1
-    ncs = 1
-    bit = 0
-    sclk = 0
-    dut.ui_in.value = ui_in_logicarray(ncs, bit, sclk)
+    dut.ui_in.value = ui_in_logicarray(1, 0, 0)
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 5)
 
-    address = [
-        (0x00),
-        (0x01),
-        (0x02),
-        (0x03)
-    ]
+    for addr in [0x00, 0x01, 0x02, 0x03]:
+        await send_spi_transaction(dut, 1, addr, 0xFF)
+    await send_spi_transaction(dut, 1, 0x04, 0x80)  # Stable
 
-    for value in address:
-        await send_spi_transaction(dut, 1, value, 0XFF)
-
-    await send_spi_transaction(dut, 1, 0x04, 0x80)  # set stable
     dut._log.info("Let frequency test begin")
 
+    # Try each bit of uo_out
     for bit in range(8):
-    try:
-        t1 = await measure_freq(dut, dut.uo_out, timeout=1000, bit=bit)
-        t2 = await measure_freq(dut, dut.uo_out, timeout=1000, bit=bit)
-        period_ns = t2 - t1
-        freq = 1e9 / period_ns
-        assert 2900 < frequency < 3100, f"Got {frequency} Hz"
-        dut._log.info("PWM Frequency test completed successfully")
-    except RuntimeError:
-        dut._log.info(f"Had no rising edge.")
+        try:
+            t1 = await measure_freq(dut, dut.uo_out, timeout=1000, bit=bit)
+            t2 = await measure_freq(dut, dut.uo_out, timeout=1000, bit=bit)
+            period_ns = t2 - t1
+            freq = 1e9 / period_ns
+            dut._log.info(f"Bit {bit} frequency = {freq:.2f} Hz")
+            assert 2900 < freq < 3100, f"Got {freq:.2f} Hz on bit {bit}"
+            dut._log.info("PWM Frequency test completed successfully")
+            return
+        except RuntimeError:
+            dut._log.info(f"Bit {bit}: No rising edge detected")
+
+    raise RuntimeError("No PWM signal detected on any uo_out bit")
+
 
 @cocotb.test()
 async def test_pwm_duty(dut):
