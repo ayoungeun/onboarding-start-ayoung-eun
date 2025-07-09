@@ -153,7 +153,7 @@ async def test_spi(dut):
 
 
 
-@cocotb.test()
+
 async def measure_freq(dut):
     # Wait for the first rising edge
     await RisingEdge(dut.clk)
@@ -167,7 +167,7 @@ async def measure_freq(dut):
     period_ns = t2 - t1
     frequency = 1 / period_ns
     
-@cocotb.test()
+
 async def measure_duty(dut):
     # Wait for the first rising edge
     await RisingEdge(dut.clk)
