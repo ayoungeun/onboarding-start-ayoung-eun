@@ -214,7 +214,7 @@ async def test_pwm_freq(dut):
     await ClockCycles(dut.clk, 10000)
 
     dut._log.info("Let frequency test begin")
-    for bit in rage (8):
+    for bit in range (8):
         t1 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
         t2 = await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=bit)
         t3 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
