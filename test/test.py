@@ -154,21 +154,16 @@ async def test_spi(dut):
 
 
 
-async def measure_freq(dut, signal):
-    # Wait for the first rising edge
-    await RisingEdge(signal)
-    t1 = get_sim_time(units="ns")  # capture time in nanoseconds
-
-    # Wait for the second rising edge
-    await RisingEdge(signal)
-    t2 = get_sim_time(units="ns")
-
-    # Calculate the clock period
-    period_ns = t2 - t1
-    frequency = 1 / period_ns
+async def measure_freq(dut, signal,timeout=1000):
+    # Wait for the rising edge
+    for each in range(timeout):
+        await RisingEdge(signal)
+        if signal.value.integer == 1:
+            return cocotb.utils.get_sim_time(units="ns")
+    raise RuntimeError("Timeout")
     
 
-async def measure_duty(dut, signal):
+async def measure_duty(dut, signal, timeout=1000):
     # Wait for the first rising edge
     await RisingEdge(signal)
     t1 = get_sim_time(units="ns")  # capture time in nanoseconds
@@ -189,7 +184,7 @@ async def test_pwm_freq(dut):
     # Write your test here
     #Literally copied testbench above
     dut._log.info("test_pwm_freq")
-    signal = dut.uo_out
+    signal = dut.uo_out[0] //pwm output bit
 
     # Set the clock period to 100 ns (10 MHz)
     clock = Clock(dut.clk, 100, units="ns")
@@ -206,25 +201,25 @@ async def test_pwm_freq(dut):
     await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 5)
-    await send_spi_transaction(dut, 1, 0x00, 0xFF)  # Write transaction
-    await send_spi_transaction(dut, 1, 0x01, 0xFF)  # Write transaction
-    await send_spi_transaction(dut, 1, 0x02, 0xFF)  # Write transaction
-    await send_spi_transaction(dut, 1, 0x03, 0xFF)  # Write transaction
 
+    address = [
+        (0x00),
+        (0x01),
+        (0x02),
+        (0x03)
+    ]
+
+    for value in address:
+        await send_spi_transaction(dut, 1, value, 0XFF)
 
     await send_spi_transaction(dut, 1, 0x04, 0x80)  # set stable
     dut._log.info("Let frequency test begin")
 
-    await RisingEdge(signal)
-    t1 = get_sim_time(units="ns")
-
-    await RisingEdge(signal)
-    t2 = get_sim_time(units="ns")
-
+    t1 = await measure_freq(dut, dut.uo_out[0]) 
+    t2 = await measure_freq(dut, dut.uo_out[0])
+    dut._log.info(f"Measured PWM frequency: {frequency} Hz")
     period_ns = t2 - t1
     frequency = 1e9 / period_ns
-
-    dut._log.info(f"Measured PWM frequency: {frequency} Hz")
 
     assert 2900 < frequency < 3100, f"Got {frequency} Hz"
 
