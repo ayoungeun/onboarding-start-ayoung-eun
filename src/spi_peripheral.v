@@ -19,7 +19,7 @@ module spi_peripheral (
     reg[5:0] rising_counter, falling_counter;
     reg[15:0] spi_buf;
     reg ncs_rise_detected;
-    reg [2:0] count;
+    reg [1:0] count;
     //need to pass it
 
   always @(posedge clk) begin
@@ -36,6 +36,29 @@ module spi_peripheral (
 end
 
 
+typedef enum logic [1:0] {
+    IDLE,
+    RECEIVING,
+    DONE
+} spi_state_t;
+
+spi_state_t state;
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+        state <= IDLE;
+    else begin
+        case (state)
+            IDLE: if (nCS_low) state <= RECEIVING;
+            RECEIVING: if (nCS_rising) state <= DONE;
+            DONE: state <= IDLE;
+        endcase
+    end
+end
+
+
+
+//Screw this, I will just use FSM if this doesn't work out.
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         rising_counter <= 0;
@@ -49,45 +72,46 @@ always @(posedge clk or negedge rst_n) begin
 
     end else begin
         // SPI shift logic
+
+        //nCS is down, we are ready to transmit.
+        if (nCS_sync[1] == 1'b1 && nCS_sync[0] == 1'b0) begin 
+            transaction_ready <= 1'b1;
+            transaction_processed <= 1'b0;
+            ncs_rise_detected <= 0; // reset the flag
+        end
+        //nCS is up, we are ready to process.
+        else if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin 
+            $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
+            ncs_rise_detected <= 1'b1; // set a flag
+            if (ncs_rise_detected) begin
+                if ((spi_buf[0] == 1'b1) && (spi_buf[7:1] <= MAX_ADDR)) begin
+                transaction_processed <= 1'b1;      
+                end else begin
+                transaction_processed <= 1'b0;
+                end 
+            end
+            transaction_ready <= 1'b0; // delayed
+        end
+
+        if (transaction_ready) begin
+
         if (rising_counter < 16 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
             spi_buf <= {spi_buf[14:0], COPI_sync[1]};
              rising_counter <= rising_counter + 1;
              $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
         end
 
-        if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed && rising_counter == 16) begin
-            ncs_rise_detected <= 1'b1; // set a flag
-
-        end else if (ncs_rise_detected) begin
-            count <= count + 1; 
-
-            if (count == 3'b111) begin
-                transaction_ready <= 1'b1; // delayed
-                 $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
-                ncs_rise_detected <= 0;
-                rising_counter <= 0;
-                count <= 0;
-            end
-           
-
-        end 
-        
-        if (transaction_ready && !transaction_processed) begin
-            if ((spi_buf[0] == 1'b1) && (spi_buf[7:1] <= MAX_ADDR)) begin
-                transaction_processed <= 1'b1;      
-            end else begin
-                transaction_processed <= 1'b0;
-            end 
-
-        end 
+        end
         
         if (transaction_processed) begin
             $display("transaction_processed");
-            outtopwm <= spi_buf[15:8];
-            outtopwm2 <= spi_buf[7:0];
+            $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
+            outtopwm <= spi_buf[7:0];
+            outtopwm2 <= spi_buf[15:8];
             transaction_ready <= 0;
             transaction_processed <= 0;
         end
+
     end
 end
 
