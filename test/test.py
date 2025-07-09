@@ -149,13 +149,118 @@ async def test_spi(dut):
 
     dut._log.info("SPI test completed successfully")
 
+
+
+@cocotb.test()
+async def measure_freq(dut):
+
+@cocotb.test()
+async def measure_duty(dut):
+
+
 @cocotb.test()
 async def test_pwm_freq(dut):
     # Write your test here
+    #Literally copied testbench above
+    # dut._log.info("test_pwm_freq")
+
+    # # Set the clock period to 100 ns (10 MHz)
+    # clock = Clock(dut.clk, 100, units="ns")
+    # cocotb.start_soon(clock.start())
+
+    # # Reset
+    # dut._log.info("Reset")
+    # dut.ena.value = 1
+    # ncs = 1
+    # bit = 0
+    # sclk = 0
+    # dut.ui_in.value = ui_in_logicarray(ncs, bit, sclk)
+    # dut.rst_n.value = 0
+    # await ClockCycles(dut.clk, 5)
+    # dut.rst_n.value = 1
+    # await ClockCycles(dut.clk, 5)
+    # await send_spi_transaction(dut, 1, 0x00, 0xFF)  # Write transaction
+    # await send_spi_transaction(dut, 1, 0x01, 0xFF)  # Write transaction
+    # await send_spi_transaction(dut, 1, 0x02, 0xFF)  # Write transaction
+    # await send_spi_transaction(dut, 1, 0x03, 0xFF)  # Write transaction
+
+
+    # await send_spi_transaction(dut, 1, 0x04, 0x4F)  # I think whatever value is fine?
+
+    # dut._log.info("Frequency test begins")
+
+    # dut._log.info("uio_out ports")
+    # #for every bit
+    # for i in range(0, 8):
+    #     result = await measure_freq(dut)
+    #     dut._log.info("Frequency")
+    #     await ClockCycles(dut.clk, 5)
+
+    # dut._log.info("uo_out ports")
+    # for i in range(0, 8):
+    #     result = await measure_freq(dut)
+    #     dut._log.info("Frequency")
+    #     await ClockCycles(dut.clk, 5)
+
     dut._log.info("PWM Frequency test completed successfully")
+
+
+
 
 
 @cocotb.test()
 async def test_pwm_duty(dut):
     # Write your test here
+
+    # dut._log.info("test_pwm_duty")
+
+    # # Set the clock period to 100 ns (10 MHz)
+    # clock = Clock(dut.clk, 100, units="ns")
+    # cocotb.start_soon(clock.start())
+
+    # # Reset
+    # dut._log.info("Reset")
+    # dut.ena.value = 1
+    # ncs = 1
+    # bit = 0
+    # sclk = 0
+    # dut.ui_in.value = ui_in_logicarray(ncs, bit, sclk)
+    # dut.rst_n.value = 0
+    # await ClockCycles(dut.clk, 5)
+    # dut.rst_n.value = 1
+    # await ClockCycles(dut.clk, 5)
+    # await send_spi_transaction(dut, 1, 0x00, 0xFF)  # Write transaction
+    # await send_spi_transaction(dut, 1, 0x01, 0xFF)  # Write transaction
+    # await send_spi_transaction(dut, 1, 0x02, 0xFF)  # Write transaction
+    # await send_spi_transaction(dut, 1, 0x03, 0xFF)  # Write transaction
+
+    
+
+    # duty_cycles = [
+    #     (0x00, "0%"),
+    #     (0x40, "25%"),
+    #     (0x80, "50%"),
+    #     (0xFF, "100%")
+    # ]
+
+    # for value, label in duty_cycles:
+    #     await send_spi_transaction(dut, 1, 0x04, value)
+    #     dut._log.info(f"Set PWM duty cycle to {label} (0x{value:02X})")
+
+    #     dut._log.info("uio_out ports")
+    #         #for every bit
+    #         for i in range(0, 8):
+    #         result = await measure_duty(dut)
+    #         await ClockCycles(dut.clk, 5)
+
+    #     dut._log.info("uo_out ports")
+    #         for i in range(0, 8):
+    #         result = await measure_duty(dut)
+    #         await ClockCycles(dut.clk, 5)
+
+    # await ClockCycles(dut.clk, 100)
+
+
     dut._log.info("PWM Duty Cycle test completed successfully")
+
+
