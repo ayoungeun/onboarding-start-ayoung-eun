@@ -21,8 +21,6 @@ module spi_peripheral (
     reg[1:0] nCS_sync;
     reg[5:0] rising_counter, falling_counter;
     reg[15:0] spi_buf;
-    reg ncs_rise_detected;
-    reg [1:0] count;
     //need to pass it
 
   always @(posedge clk) begin
@@ -45,10 +43,11 @@ always @(posedge clk or negedge rst_n) begin
         rising_counter <= 0;
         transaction_ready <= 1'b0;
         transaction_processed <= 1'b0;
-        outtopwm <= 8'b0;
-        outtopwm2 <= 8'b0;
-        ncs_rise_detected <= 0;
-        count <= 0;
+        out_uo_out <= 8'b0;
+        out_uio_out <= 8'b0;
+        out_PWM_uo_out <= 8'b0;
+        out_PWM_uio_out <= 8'b0;
+        out_duty_cycle <= 8'b0;
         spi_buf <= 16'b0;
 
     end else begin
