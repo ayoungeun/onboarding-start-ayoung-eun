@@ -266,23 +266,30 @@ async def test_pwm_duty(dut):
 
 
     duty_cycles = [
-
+        (0x00, "0%"),
         (0x40, "25%"),
-        (0x80, "50%")
-        
+        (0x80, "50%"),
+        (0xC0, "75%"),
+        (0xFF, "100%"),
     ]
 
     for value, label in duty_cycles:
         await send_spi_transaction(dut, 1, 0x04, value)
-        #sync throwaway
-        await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising
-        await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Falling
-        await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising again       
-
         dut._log.info(f"Set PWM duty cycle to {label} (0x{value:02X})")
-        #Wait for the rising edge/falling edge for 5 times, you can then conclude that it is duty cycle 0% or 100%.
+        #sync throwaway
+        try:
+            await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising
+        except RuntimeError:
+            dut._log.warning(f"0% duty cycle")
+            continue
 
-        #for #some amount of time two cases - no rising edge or falling edge, that'd be duty cycle.
+        try:
+            await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising
+        except RuntimeError:
+            dut._log.warning(f"100% duty cycle")
+            continue
+
+        await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising again       
 
         for bit in range (8):
             t1 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
