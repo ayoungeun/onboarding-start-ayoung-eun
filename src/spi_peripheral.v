@@ -58,7 +58,7 @@ always @(posedge clk or negedge rst_n) begin
             ncs_rise_detected <= 0; // reset the flag
         end
         //nCS is up, we are ready to process.
-        else if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin 
+        else if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && rising_counter == 15) begin 
             $display("nCS is up = %d, spi_buf = %b", rising_counter, spi_buf);
             ncs_rise_detected <= 1'b1; // set a flag
             if (ncs_rise_detected) begin
@@ -82,7 +82,7 @@ always @(posedge clk or negedge rst_n) begin
 
         end
 
-        if (transaction_processed) begin
+        else if (transaction_processed) begin
             $display("transaction_processed");
             $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
             outtopwm <= spi_buf[7:0];
