@@ -48,6 +48,7 @@ always @(posedge clk or negedge rst_n) begin
         if (rising_counter < 16 && nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b0 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
             spi_buf <= {spi_buf[14:0], COPI_sync[1]};
              rising_counter <= rising_counter + 1;
+             $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf)
         end
 
         if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
