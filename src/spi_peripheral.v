@@ -18,7 +18,7 @@ module spi_peripheral (
     reg[1:0] nCS_sync;
     reg[5:0] rising_counter, falling_counter;
     reg[15:0] spi_buf;
-    reg ncs_rise_detected;
+    reg[2:0] ncs_rise_detected;
     //need to pass it
 
   always @(posedge clk) begin
@@ -53,12 +53,12 @@ always @(posedge clk or negedge rst_n) begin
         end
 
         if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
-            ncs_rise_detected <= 1'b1; // set a flag
+            ncs_rise_detected <= ncs_rise_detected + 1; // set a flag
 
-        end else if (ncs_rise_detected) begin
+        end else if (ncs_rise_detected[2]) begin
             transaction_ready <= 1'b1; // delayed one cycle
             ncs_rise_detected <= 0;
-            rising_counter <= 0;
+            // rising_counter <= 0;
             //$display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
 
         end else if (transaction_ready && !transaction_processed) begin
@@ -70,8 +70,8 @@ always @(posedge clk or negedge rst_n) begin
             end 
 
         end else if (transaction_processed) begin
-            outtopwm <= spi_buf[15:8];
-            outtopwm2 <= spi_buf[7:0];
+            outtopwm <= spi_buf[7:0];
+            outtopwm2 <= spi_buf[15:8];
             transaction_ready <= 0;
             transaction_processed <= 0;
         end
