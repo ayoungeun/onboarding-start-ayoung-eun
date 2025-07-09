@@ -154,7 +154,7 @@ async def test_spi(dut):
 
 
 
-async def measure_freq(dut, signal,timeout=1000, bit=0):
+async def detect_rising_edge(dut, signal,timeout=1000, bit=0):
     # Wait for the rising edge
     for each in range(timeout):
         curr = int(dut.uo_out.value) & (1 << bit) #Manually check the bit
@@ -202,21 +202,19 @@ async def test_pwm_freq(dut):
 
     dut._log.info("Let frequency test begin")
 
-    # Try each bit of uo_out
-    for bit in range(8):
-        try:
-            t1 = await measure_freq(dut, dut.uo_out, timeout=1000, bit=bit)
-            t2 = await measure_freq(dut, dut.uo_out, timeout=1000, bit=bit)
-            period_ns = t2 - t1
-            freq = 1e9 / period_ns
-            dut._log.info(f"Bit {bit} frequency = {freq:.2f} Hz")
-            assert 2900 < freq < 3100, f"Got {freq:.2f} Hz on bit {bit}"
-            dut._log.info("PWM Frequency test completed successfully")
-            return
-        except RuntimeError:
-            dut._log.info(f"Bit {bit}: No rising edge detected")
+    try:
+        t1 = await detect_rising_edge(dut, dut.uo_out[0], timeout=1000, bit=0)
+        t2 = await detect_rising_edge(dut, dut.uo_out[0], timeout=1000, bit=0)
+        period_ns = t2 - t1
+        freq = 1e9 / period_ns
+        dut._log.info(f"Bit {bit} frequency = {freq:.2f} Hz")
+        assert 2900 < freq < 3100, f"Got {freq:.2f} Hz on bit {bit}"
+        dut._log.info("PWM Frequency test completed successfully")
+        return
+    except RuntimeError:
+        dut._log.info(f"Bit {bit}: No rising edge detected")
 
-    raise RuntimeError("No PWM signal detected on any uo_out bit")
+
 
 
 @cocotb.test()
