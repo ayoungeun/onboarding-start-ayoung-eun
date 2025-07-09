@@ -62,11 +62,11 @@ always @(posedge clk or negedge rst_n) begin
             $display("nCS is up = %d, spi_buf = %b", rising_counter, spi_buf);
             ncs_rise_detected <= 1'b1; // set a flag
             if (ncs_rise_detected) begin
-                // if ((spi_buf[0] == 1'b1) && (spi_buf[7:1] <= MAX_ADDR)) begin
+                //if ((spi_buf[0] == 1'b1) && (spi_buf[7:1] <= MAX_ADDR)) begin
                 transaction_processed <= 1'b1;      
-                // end else begin
-                // transaction_processed <= 1'b0;
-                end 
+                //end else begin
+                //transaction_processed <= 1'b0;
+                //end 
             end
             transaction_ready <= 1'b0; // delayed
             rising_counter <= 0; // reset the counter
@@ -77,7 +77,7 @@ always @(posedge clk or negedge rst_n) begin
         if (rising_counter < 16 && sclk_sync[1] == 1'b1 && sclk_sync[0] == 1'b0) begin
             spi_buf <= {spi_buf[14:0], COPI_sync[1]};
              rising_counter <= rising_counter + 1;
-             $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
+             //$display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
         end
 
         end
