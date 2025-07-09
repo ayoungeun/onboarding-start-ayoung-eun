@@ -152,44 +152,25 @@ async def test_spi(dut):
     dut._log.info("SPI test completed successfully")
 
 
-
-
 async def detect_rising_edge(dut, signal,timeout, bit=0):
     # Wait for the rising edge
     for each in range(timeout):
         await ClockCycles(dut.clk, 1)
-        curr = int(signal.value) & (1 << bit) #Manually check the bit
+        curr = int(signal.value) & (1 << bit) # Manually check the bit
         if (curr != 0):
             return cocotb.utils.get_sim_time(units="ns")
         
     raise RuntimeError("Timeout waiting for rising edge")
 
 async def detect_falling_edge(dut, signal,timeout, bit=0):
-    # Wait for the rising edge
+    # Wait for the falling edge
     for each in range(timeout):
         await ClockCycles(dut.clk, 1)
-        curr = int(signal.value) & (1 << bit) #Manually check the bit
+        curr = int(signal.value) & (1 << bit) # Manually check the bit
         if (curr == 0):
             return cocotb.utils.get_sim_time(units="ns")
         
     raise RuntimeError("Timeout waiting for falling edge")
-    
-
-async def measure_duty(dut, signal, timeout=1000):
-    # Wait for the first rising edge
-    await RisingEdge(signal)
-    t1 = get_sim_time(units="ns")  # capture time in nanoseconds
-    await FallingEdge(signal)
-    fall_t = get_sim_time(units="ns")  # capture time in nanoseconds
-
-    # Wait for the second rising edge
-    await RisingEdge(signal)
-    t2 = get_sim_time(units="ns")
-
-    # Calculate the clock period
-    high_time = fall_t - t1
-    period_ns = t2 - t1
-    duty_cycle = high_time / period_ns
     
 @cocotb.test()
 async def test_pwm_freq(dut):
@@ -215,19 +196,19 @@ async def test_pwm_freq(dut):
     await send_spi_transaction(dut, 1, 0x01, 0xFF)  # Write transaction
     await send_spi_transaction(dut, 1, 0x02, 0xFF)  # Write transaction
     await send_spi_transaction(dut, 1, 0x03, 0xFF)  # Write transaction
-    await send_spi_transaction(dut, 1, 0x04, 0x80)  # Stable
+    await send_spi_transaction(dut, 1, 0x04, 0x80)  # Stabilize
 
     dut._log.info("Let frequency test begin")
 
-    await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising
-    await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Falling
-    await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising again
+    # Sync throwaway
+    await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)
+    await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=0)
+    await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)
 
     for bit in range (8):
         t1 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
         t2 = await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=bit)
         t3 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
-        dut._log.info(f"Got {t1} ns and {t3} ns")
         period_ns = t3 - t1
         freq = 1e9 / period_ns
         dut._log.info(f"Bit {bit} frequency = {freq:.2f} Hz")
@@ -237,8 +218,6 @@ async def test_pwm_freq(dut):
 
 @cocotb.test()
 async def test_pwm_duty(dut):
-    # Write your test here
-
     dut._log.info("test_pwm_duty")
 
     # Set the clock period to 100 ns (10 MHz)
@@ -262,9 +241,6 @@ async def test_pwm_duty(dut):
     await send_spi_transaction(dut, 1, 0x03, 0xFF)  # Write transaction
 
     dut._log.info("Let duty cycle test begin")
-
-
-
     duty_cycles = [
         (0x00, "0%"),
         (0x40, "25%"),
@@ -277,6 +253,10 @@ async def test_pwm_duty(dut):
         await send_spi_transaction(dut, 1, 0x04, value)
         dut._log.info(f"Set PWM duty cycle to {label} (0x{value:02X})")
         #sync throwaway
+
+        #Catch cases where the duty cycle is 0% or 100%
+        # If the duty cycle is 0%, the first rising edge will not be detected
+        # If the duty cycle is 100%, the first falling edge will not be detected
         try:
             await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising
         except RuntimeError:
@@ -290,18 +270,16 @@ async def test_pwm_duty(dut):
             continue
 
         await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=0)  # Rising again       
-
         for bit in range (8):
             t1 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
             t2 = await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=bit)
             t3 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
-            dut._log.info(f"Got {t1} ns and {t3} ns")
             high_time = t2 - t1
             period_ns = t3 - t1
             duty_cycle = (high_time / period_ns) * 100
             dut._log.info(f"Bit {bit} duty cycle = {duty_cycle:.2f} %")
-
     await ClockCycles(dut.clk, 100)
+
     dut._log.info("PWM Duty Cycle test completed successfully")
 
 
