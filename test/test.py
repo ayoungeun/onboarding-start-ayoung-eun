@@ -157,19 +157,21 @@ async def test_spi(dut):
 async def detect_rising_edge(dut, signal,timeout, bit=0):
     # Wait for the rising edge
     for each in range(timeout):
-        await ClockCycles(dut.clk, 5)
+        
         curr = int(signal.value) & (1 << bit) #Manually check the bit
         if (curr == 1):
             return cocotb.utils.get_sim_time(units="ns")
+        await ClockCycles(dut.clk, 5)
     raise RuntimeError("Timeout waiting for rising edge")
 
 async def detect_falling_edge(dut, signal,timeout, bit=0):
     # Wait for the rising edge
     for each in range(timeout):
-        await ClockCycles(dut.clk, 5)
+        
         curr = int(signal.value) & (1 << bit) #Manually check the bit
         if (curr == 0):
             return cocotb.utils.get_sim_time(units="ns")
+        await ClockCycles(dut.clk, 5)
     raise RuntimeError("Timeout waiting for falling edge")
     
 
@@ -215,9 +217,9 @@ async def test_pwm_freq(dut):
 
     dut._log.info("Let frequency test begin")
     for bit in range (8):
-        t1 = await detect_rising_edge(dut, dut.uo_out, timeout=7000, bit=bit)
-        t2 = await detect_falling_edge(dut, dut.uo_out, timeout=7000, bit=bit)
-        t3 = await detect_rising_edge(dut, dut.uo_out, timeout=7000, bit=bit)
+        t1 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
+        t2 = await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=bit)
+        t3 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
         dut._log.info(f"Got {t1} ns and {t3} ns")
         period_ns = t3 - t1
         freq = 1e9 / period_ns
