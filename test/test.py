@@ -158,7 +158,6 @@ async def measure_freq(dut, signal,timeout=1000, bit=0):
     # Wait for the rising edge
     prev = signal.value.integer & (1 << bit)
     for each in range(timeout):
-        await RisingEdge(clk)
         curr = signal.value.integer & (1 << bit)
         if prev == 0 and curr != 0:
             return cocotb.utils.get_sim_time(units="ns")
