@@ -8,7 +8,7 @@ module spi_peripheral (
     input  wire COPI,      // data from master
     input  wire nCS,      // slave select, active low
     output  reg [7:0] out_uo_out,
-    output  reg [7:0] out_uio_out
+    output  reg [7:0] out_uio_out,
     output  reg [7:0] out_PWM_uo_out,
     output  reg [7:0] out_PWM_uio_out,
     output  reg [7:0] out_duty_cycle
