@@ -18,7 +18,8 @@ module spi_peripheral (
     reg[1:0] nCS_sync;
     reg[5:0] rising_counter, falling_counter;
     reg[15:0] spi_buf;
-    reg[2:0] ncs_rise_detected;
+    reg ncs_rise_detected;
+    reg [2:0] count;
     //need to pass it
 
   always @(posedge clk) begin
@@ -43,6 +44,8 @@ always @(posedge clk or negedge rst_n) begin
         outtopwm <= 8'b0;
         outtopwm2 <= 8'b0;
         ncs_rise_detected <= 0;
+        count <= 0;
+        spi_buf <= 16'b0;
 
     end else begin
         // SPI shift logic
@@ -53,23 +56,34 @@ always @(posedge clk or negedge rst_n) begin
         end
 
         if (nCS_sync[1] == 1'b0 && nCS_sync[0] == 1'b1 && ~transaction_processed) begin
-            ncs_rise_detected <= ncs_rise_detected + 1; // set a flag
+            ncs_rise_detected <= 1'b1; // set a flag
 
-        end else if (ncs_rise_detected[2]) begin
-            transaction_ready <= 1'b1; // delayed one cycle
-            ncs_rise_detected <= 0;
-            // rising_counter <= 0;
-            $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
+        end else if (ncs_rise_detected) begin
+            count <= count + 1; 
 
-        end else if (transaction_ready && !transaction_processed) begin
+            if (count == 3'b111) begin
+                transaction_ready <= 1'b1; // delayed
+                 $display("rising_counter = %d, spi_buf = %b", rising_counter, spi_buf);
+                ncs_rise_detected <= 0;
+                rising_counter <= 0;
+                count <= 0;
+            end
+           
 
+        end 
+        
+        if (transaction_ready && !transaction_processed) begin
+             $display("transaction_ready = %b, spi_buf = %b", transaction_ready, spi_buf);
             if ((spi_buf[0] == 1'b1) && (spi_buf[7:1] <= MAX_ADDR)) begin
                 transaction_processed <= 1'b1;      
             end else begin
                 transaction_processed <= 1'b0;
             end 
 
-        end else if (transaction_processed) begin
+        end 
+        
+        if (transaction_processed) begin
+            $display("transaction_processed");
             outtopwm <= spi_buf[7:0];
             outtopwm2 <= spi_buf[15:8];
             transaction_ready <= 0;
