@@ -214,19 +214,19 @@ async def test_pwm_freq(dut):
     dut._log.info("Let frequency test begin")
 
     for bit in range(8):
-    try:
-        t1 = await detect_rising_edge(dut, dut.uo_out[0], timeout=10000, bit=bit)
-        t2 = await detect_falling_edge(dut, dut.uo_out[0], timeout=10000, bit=bit)
-        t3 = await detect_rising_edge(dut, dut.uo_out[0], timeout=10000, bit=bit)
-        dut._log.info(f"Got {t1} ns and {t3} ns")
-        period_ns = t3 - t1
-        freq = 1e9 / period_ns
-        dut._log.info(f"Bit {bit} frequency = {freq:.2f} Hz")
-        assert 2900 < freq < 3100, f"Got {freq:.2f} Hz on bit {bit}"
-        dut._log.info("PWM Frequency test completed successfully")
-        return
-    except RuntimeError:
-        dut._log.info(f"Bit {bit}: No rising edge detected")
+        try:
+            t1 = await detect_rising_edge(dut, dut.uo_out[0], timeout=10000, bit=bit)
+            t2 = await detect_falling_edge(dut, dut.uo_out[0], timeout=10000, bit=bit)
+            t3 = await detect_rising_edge(dut, dut.uo_out[0], timeout=10000, bit=bit)
+            dut._log.info(f"Got {t1} ns and {t3} ns")
+            period_ns = t3 - t1
+            freq = 1e9 / period_ns
+            dut._log.info(f"Bit {bit} frequency = {freq:.2f} Hz")
+            assert 2900 < freq < 3100, f"Got {freq:.2f} Hz on bit {bit}"
+            dut._log.info("PWM Frequency test completed successfully")
+            return
+        except RuntimeError:
+            dut._log.info(f"Bit {bit}: No rising edge detected")
 
 
 
