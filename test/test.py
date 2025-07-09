@@ -223,7 +223,7 @@ async def test_pwm_freq(dut):
     for bit in range (8):
         await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)  # sync throwaway
         t1 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
-        t2 = await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=bit)
+        #t2 = await detect_falling_edge(dut, dut.uo_out, timeout=10000, bit=bit)
         t3 = await detect_rising_edge(dut, dut.uo_out, timeout=10000, bit=bit)
         dut._log.info(f"Got {t1} ns and {t3} ns")
         period_ns = t3 - t1
