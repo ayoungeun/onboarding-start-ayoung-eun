@@ -157,19 +157,21 @@ async def test_spi(dut):
 async def detect_rising_edge(dut, signal,timeout, bit=0):
     # Wait for the rising edge
     for each in range(timeout):
-        await RisingEdge(dut.clk)
+        
         curr = int(signal.value) & (1 << bit) #Manually check the bit
         if (curr == 1):
             return cocotb.utils.get_sim_time(units="ns")
+        await RisingEdge(dut.clk)
     raise RuntimeError("Timeout waiting for rising edge")
 
 async def detect_falling_edge(dut, signal,timeout, bit=0):
     # Wait for the rising edge
     for each in range(timeout):
-        await RisingEdge(dut.clk)
+        
         curr = int(signal.value) & (1 << bit) #Manually check the bit
         if (curr == 0):
             return cocotb.utils.get_sim_time(units="ns")
+        await RisingEdge(dut.clk)
     raise RuntimeError("Timeout waiting for falling edge")
     
 
