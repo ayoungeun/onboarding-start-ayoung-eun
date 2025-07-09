@@ -161,6 +161,14 @@ async def detect_rising_edge(dut, signal,timeout=1000, bit=0):
         if (curr == 1):
             return cocotb.utils.get_sim_time(units="ns")
     raise RuntimeError("Timeout waiting for rising edge")
+
+async def detect_rising_edge(dut, signal,timeout=1000, bit=0):
+    # Wait for the rising edge
+    for each in range(timeout):
+        curr = int(dut.uo_out.value) & (1 << bit) #Manually check the bit
+        if (curr == 0):
+            return cocotb.utils.get_sim_time(units="ns")
+    raise RuntimeError("Timeout waiting for rising edge")
     
 
 async def measure_duty(dut, signal, timeout=1000):
@@ -196,16 +204,21 @@ async def test_pwm_freq(dut):
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 5)
 
-    for addr in [0x00, 0x01, 0x02, 0x03]:
-        await send_spi_transaction(dut, 1, addr, 0xFF)
+    await send_spi_transaction(dut, 1, 0x00, 0xFF)  # Write transaction
+    await send_spi_transaction(dut, 1, 0x01, 0xFF)  # Write transaction
+    await send_spi_transaction(dut, 1, 0x02, 0xFF)  # Write transaction
+    await send_spi_transaction(dut, 1, 0x03, 0xFF)  # Write transaction
     await send_spi_transaction(dut, 1, 0x04, 0x80)  # Stable
+    await ClockCycles(dut.clk, 10000)
 
     dut._log.info("Let frequency test begin")
 
     try:
         t1 = await detect_rising_edge(dut, dut.uo_out[0], timeout=1000, bit=0)
-        t2 = await detect_rising_edge(dut, dut.uo_out[0], timeout=1000, bit=0)
-        period_ns = t2 - t1
+        t2 = await detect_falling_edge(dut, dut.uo_out[0], timeout=1000, bit=0)
+        t3 = await detect_rising_edge(dut, dut.uo_out[0], timeout=1000, bit=0)
+        dut._log.info(f"Got {t1} ns and {t3} ns")
+        period_ns = t3 - t1
         freq = 1e9 / period_ns
         dut._log.info(f"Bit {bit} frequency = {freq:.2f} Hz")
         assert 2900 < freq < 3100, f"Got {freq:.2f} Hz on bit {bit}"
@@ -253,6 +266,7 @@ async def test_pwm_duty(dut):
     for value, label in duty_cycles:
         await send_spi_transaction(dut, 1, 0x04, value)
         dut._log.info(f"Set PWM duty cycle to {label} (0x{value:02X})")
+        #Wait for the rising edge/falling edge for 5 times, you can then conclude that it is duty cycle 0% or 100%.
 
         dut._log.info("uio_out ports")
         await ClockCycles(dut.clk, 5)
